@@ -1,46 +1,63 @@
 # Word Learning App
 
-知らない単語を登録してAIで学習するアプリ。
+知らない単語を登録し、AIで説明を生成して学習するアプリ。5回閲覧で自動削除。
 
 ## Tech Stack
-- **Frontend**: React Native (Expo SDK 54) + Expo Router
-- **Styling**: NativeWind (Tailwind CSS)
-- **Backend**: Supabase (PostgreSQL)
-- **AI**: Gemini API (Flash, 無料枠)
-- **Testing**: Jest + ts-jest (unit), Playwright (E2E)
+
+- **Framework**: React Native (Expo SDK 54) + Expo Router (file-based routing)
+- **Styling**: NativeWind v4 (Tailwind CSS)
+- **DB/Auth**: Supabase (PostgreSQL, RLS anon access)
+- **AI**: Gemini 2.5 Flash API (無料枠)
+- **Testing**: Jest + ts-jest (unit)
+- **Deploy**: Vercel (static, `dist/`)
 
 ## Project Structure
+
 ```
-app/
-├── src/
-│   ├── app/          # Expo Router pages
-│   │   ├── _layout.tsx
-│   │   ├── index.tsx       # Home (card list)
-│   │   ├── add.tsx         # Add word
-│   │   ├── categorize.tsx  # AI categorization
-│   │   └── word/[id].tsx   # Word detail
-│   ├── lib/
-│   │   ├── supabase.ts     # Supabase client
-│   │   ├── gemini.ts       # Gemini API client
-│   │   └── offline.ts      # Offline storage
-│   ├── types/
-│   │   └── database.ts     # TypeScript types
-│   ├── components/         # Shared components
-│   └── hooks/              # Custom hooks
-├── __tests__/              # Jest tests
-├── supabase/migrations/    # SQL migrations
-└── .env                    # Environment variables (not committed)
+src/app/           — Expo Router pages (_layout, index, add, categorize, word/[id])
+src/lib/           — supabase.ts, gemini.ts, offline.ts
+src/types/         — database.ts (Word, Category, OfflineWord)
+src/components/    — Shared components
+src/hooks/         — Custom hooks
+__tests__/         — Jest tests (gemini.test.ts, offline.test.ts)
+supabase/migrations/ — SQL migrations
 ```
 
 ## Commands
-- `npm start` — Start Expo dev server
-- `npm test` — Run Jest tests
-- `npm run web` — Start web version
 
-## Key Design Decisions
-- 5回閲覧で単語を完全削除（アーカイブなし）
-- AI説明はDB保存して2回目以降はAPI不要
-- カテゴライズはユーザー主導（ボタン押下で一括）
-- オフラインでは単語登録のみ可能（ローカル保存→復帰時同期）
-- APIエラー時は再試行ボタンを表示
-- 外部サービスはテスト時モックで代替
+```bash
+npm start          # Expo dev server
+npm run web        # Web version
+npm test           # Jest tests
+npm run test:watch # Jest watch mode
+npx expo export --platform web  # Build for Vercel (output: dist/)
+```
+
+## Key Design Rules
+
+- 5回閲覧で完全削除（アーカイブなし）
+- AI説明はDB保存 → 2回目以降はAPIスキップ
+- カテゴライズはユーザー主導（ボタン押下で未分類を一括分類）
+- オフライン時は AsyncStorage にローカル保存 → 復帰時 Supabase に同期
+- APIエラー時は再試行ボタン表示
+- 外部サービス（Supabase, Gemini, AsyncStorage）はテスト時モック
+
+## Architecture Notes
+
+- 環境変数は `EXPO_PUBLIC_` prefix（ビルド時埋め込み）
+- `.env` は gitignore 済み。Vercel にも同じ変数を設定済み
+- Supabase RLS は anon ロールで全操作許可（個人利用前提）
+- Gemini API はレスポンスが markdown code block で返る場合があるため JSON パース前に除去
+- SPA ルーティング: `dist/vercel.json` で rewrites 設定
+
+## DB Schema
+
+- **categories**: id (UUID), name (VARCHAR unique), created_at
+- **words**: id (UUID), text, memo, summary, detail, category_id (FK → categories), view_count (default 0), created_at
+
+## Coding Style
+
+- TypeScript strict
+- NativeWind className でスタイリング（StyleSheet 不使用）
+- Supabase クエリは各画面で直接呼び出し（薄い lib 層）
+- async/await + try-catch でエラーハンドリング
