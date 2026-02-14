@@ -55,6 +55,13 @@ npx expo export --platform web  # Build for Vercel (output: dist/)
 - **categories**: id (UUID), name (VARCHAR unique), created_at
 - **words**: id (UUID), text, memo, summary, detail, category_id (FK → categories), view_count (default 0), created_at
 
+## Git Branch Strategy
+
+- **main**: 本番用。直接コミット禁止
+- **develop**: 開発統合ブランチ（GitHub デフォルトブランチ）
+- **feature/xxx**: develop から切って作業 → develop へ PR → 人間がマージ
+- ブランチ名例: `feature/improve-ui`, `fix/gemini-error`
+
 ## Coding Style
 
 - TypeScript strict
