@@ -37,7 +37,7 @@ export async function generateSummary(
   text: string,
   memo: string | null
 ): Promise<string> {
-  const prompt = `「${text}」について3〜5行で簡潔に説明してください。${memo ? `\n補足情報: ${memo}` : ""}`;
+  const prompt = `「${text}」について3〜5行で簡潔に説明してください。マークダウン記法は使わず、プレーンテキストで回答してください。${memo ? `\n補足情報: ${memo}` : ""}`;
   return callGemini(prompt);
 }
 
@@ -45,7 +45,7 @@ export async function generateDetail(
   text: string,
   memo: string | null
 ): Promise<string> {
-  const prompt = `「${text}」について以下の構成で詳しく説明してください。\n- 概要\n- 背景や文脈\n- 具体例${memo ? `\n補足情報: ${memo}` : ""}`;
+  const prompt = `「${text}」について以下の構成で詳しく説明してください。\n- 概要\n- 背景や文脈\n- 具体例\nマークダウン記法は使わず、プレーンテキストで回答してください。${memo ? `\n補足情報: ${memo}` : ""}`;
   return callGemini(prompt);
 }
 
