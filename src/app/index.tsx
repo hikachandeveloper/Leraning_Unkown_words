@@ -83,6 +83,13 @@ export default function HomeScreen() {
     router.push("/categorize" as never);
   };
 
+  const handleDeleteFromList = async (wordId: string, wordText: string) => {
+    const confirmed = window.confirm(`「${wordText}」を削除しますか？`);
+    if (!confirmed) return;
+    await supabase.from("words").delete().eq("id", wordId);
+    fetchData();
+  };
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-950">
@@ -167,10 +174,21 @@ export default function HomeScreen() {
                     </Text>
                   )}
                 </View>
-                <View className="ml-3 rounded-full bg-gray-800 px-3 py-1">
-                  <Text className="text-xs text-gray-400">
-                    {item.view_count}/5
-                  </Text>
+                <View className="ml-3 flex-row items-center">
+                  <View className="rounded-full bg-gray-800 px-3 py-1">
+                    <Text className="text-xs text-gray-400">
+                      {item.view_count}/5
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDeleteFromList(item.id, item.text);
+                    }}
+                    className="ml-2 rounded-full bg-gray-800 px-2 py-1"
+                  >
+                    <Text className="text-xs text-red-400">✕</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </TouchableOpacity>
