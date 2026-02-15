@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -125,18 +126,25 @@ export default function WordDetailScreen() {
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert("削除確認", `「${word?.text}」を削除しますか？`, [
-      { text: "キャンセル", style: "cancel" },
-      {
-        text: "削除",
-        style: "destructive",
-        onPress: async () => {
-          await supabase.from("words").delete().eq("id", id);
-          router.back();
+  const handleDelete = async () => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(`「${word?.text}」を削除しますか？`);
+      if (!confirmed) return;
+      await supabase.from("words").delete().eq("id", id);
+      router.back();
+    } else {
+      Alert.alert("削除確認", `「${word?.text}」を削除しますか？`, [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: async () => {
+            await supabase.from("words").delete().eq("id", id);
+            router.back();
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   if (loading) {
