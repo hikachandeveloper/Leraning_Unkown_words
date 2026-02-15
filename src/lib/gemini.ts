@@ -7,6 +7,7 @@ interface GeminiResponse {
     content?: {
       parts?: Array<{
         text?: string;
+        thought?: boolean;
       }>;
     };
   }>;
@@ -26,11 +27,12 @@ async function callGemini(prompt: string): Promise<string> {
   }
 
   const data: GeminiResponse = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
+  const parts = data.candidates?.[0]?.content?.parts;
+  const textPart = parts?.find((p) => !p.thought && p.text);
+  if (!textPart?.text) {
     throw new Error("Gemini API returned empty response");
   }
-  return text;
+  return textPart.text;
 }
 
 export async function generateSummary(
