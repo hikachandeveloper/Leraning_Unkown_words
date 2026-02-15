@@ -23,6 +23,7 @@ export default function WordDetailScreen() {
   const [summaryError, setSummaryError] = useState(false);
   const [detailError, setDetailError] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [isLastView, setIsLastView] = useState(false);
 
   useEffect(() => {
     fetchWordAndIncrementView();
@@ -44,33 +45,41 @@ export default function WordDetailScreen() {
 
       const newViewCount = data.view_count + 1;
 
-      // Auto-delete at 5 views
+      // 5回目: 最後の閲覧として表示し、戻る時に削除
       if (newViewCount >= 5) {
-        await supabase.from("words").delete().eq("id", id);
-        Alert.alert("習得済み", `「${data.text}」を5回閲覧しました。リストから削除されます。`, [
-          { text: "OK", onPress: () => router.back() },
-        ]);
-        return;
-      }
+        setIsLastView(true);
+        const updatedWord = { ...data, view_count: newViewCount };
+        setWord(updatedWord);
+        if (!updatedWord.summary) {
+          await fetchSummary(updatedWord);
+        }
+      } else {
+        // Increment view count
+        await supabase
+          .from("words")
+          .update({ view_count: newViewCount })
+          .eq("id", id);
 
-      // Increment view count
-      await supabase
-        .from("words")
-        .update({ view_count: newViewCount })
-        .eq("id", id);
+        const updatedWord = { ...data, view_count: newViewCount };
+        setWord(updatedWord);
 
-      const updatedWord = { ...data, view_count: newViewCount };
-      setWord(updatedWord);
-
-      // Generate summary if not exists
-      if (!updatedWord.summary) {
-        await fetchSummary(updatedWord);
+        // Generate summary if not exists
+        if (!updatedWord.summary) {
+          await fetchSummary(updatedWord);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch word:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBack = async () => {
+    if (isLastView) {
+      await supabase.from("words").delete().eq("id", id);
+    }
+    router.back();
   };
 
   const fetchSummary = async (w: Word) => {
@@ -142,6 +151,20 @@ export default function WordDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-gray-950 p-6">
+      {/* Back Button */}
+      <TouchableOpacity onPress={handleBack} className="mb-4">
+        <Text className="text-indigo-400 text-base">← 一覧に戻る</Text>
+      </TouchableOpacity>
+
+      {/* Last View Notice */}
+      {isLastView && (
+        <View className="mb-4 rounded-lg bg-amber-900/30 border border-amber-700 p-3">
+          <Text className="text-amber-400 text-sm text-center font-medium">
+            これが最後の閲覧です。戻ると削除されます。
+          </Text>
+        </View>
+      )}
+
       {/* Word Title */}
       <Text className="text-3xl font-bold text-white mb-2">{word.text}</Text>
 
